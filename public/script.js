@@ -116,4 +116,5 @@ socket.on("answerChecked", ({ answer, correct, remainingCash }) => {
 });
 
 socket.on("gameOver", (cash) => {
-  alert("Koniec gry! Pozostało: "
+  alert("Koniec gry! Pozostało: " + cash.toLocaleString("pl-PL") + " zł");
+});
