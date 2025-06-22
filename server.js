@@ -34,9 +34,11 @@ io.on("connection", (socket) => {
   });
 
   socket.on("startGame", (room) => {
-    const q = questions[rooms[room].questionIndex];
+    const r = rooms[room];
+    if (!r) return;
+    const q = questions[r.questionIndex];
     io.to(room).emit("startGame");
-    io.to(room).emit("newQuestion", q);
+    io.to(room).emit("newQuestion", { ...q, cash: r.cash });
   });
 
   socket.on("submitBet", ({ room, bet }) => {
@@ -66,15 +68,4 @@ io.on("connection", (socket) => {
       r.questionIndex++;
       if (r.questionIndex >= questions.length || r.cash <= 0) {
         io.to(room).emit("koniecGry", { wynik: r.cash });
-        delete rooms[room];
-      } else {
-        const nextQ = questions[r.questionIndex];
-        io.to(room).emit("newQuestion", nextQ);
-      }
-    }, 4000);
-  });
-});
-
-http.listen(PORT, () => {
-  console.log(`Serwer działa na http://localhost:${PORT}`);
-});
+        delete rooms
