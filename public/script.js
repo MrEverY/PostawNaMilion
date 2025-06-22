@@ -27,7 +27,9 @@ const inputs = {
   D: document.getElementById("input-D"),
 };
 const remainingDisplay = document.getElementById("remaining");
+
 let timerInterval;
+let currentCash = 1000000; // 💰 bieżąca pula pieniędzy
 
 function updateRemaining() {
   const total =
@@ -35,7 +37,7 @@ function updateRemaining() {
     parseInt(inputs.B.value) +
     parseInt(inputs.C.value) +
     parseInt(inputs.D.value);
-  const remaining = 1000000 - total;
+  const remaining = currentCash - total;
   remainingDisplay.textContent = `${remaining.toLocaleString()} zł`;
 }
 
@@ -68,8 +70,8 @@ function confirmBet(force = false) {
   };
   const total = bet.A + bet.B + bet.C + bet.D;
 
-  if (!force && total !== 1000000) {
-    alert("Musisz rozdzielić dokładnie 1 000 000 zł!");
+  if (!force && total !== currentCash) {
+    alert(`Musisz rozdzielić dokładnie ${currentCash.toLocaleString()} zł!`);
     return;
   }
 
@@ -106,6 +108,8 @@ socket.on("newQuestion", (data) => {
   answerBoxes.C.textContent = data.odpowiedzi[2];
   answerBoxes.D.textContent = data.odpowiedzi[3];
 
+  currentCash = data.cash; // 💰 aktualizacja puli z serwera
+
   Object.values(inputs).forEach((i) => {
     i.value = 0;
     i.disabled = false;
@@ -115,9 +119,6 @@ socket.on("newQuestion", (data) => {
   updateRemaining();
   startTimer(30);
 
-  // zaktualizuj stan gotówki
-  remainingDisplay.textContent = `${data.cash.toLocaleString()} zł`;
-
   document.querySelectorAll(".answer").forEach((el) => {
     el.style.opacity = "1";
   });
@@ -125,7 +126,8 @@ socket.on("newQuestion", (data) => {
 
 socket.on("odrzuconaOdpowiedz", ({ litera, poprawna, pozostalo }) => {
   document.getElementById(litera).style.opacity = "0.3";
-  remainingDisplay.textContent = `Pozostało: ${pozostalo.toLocaleString()} zł`;
+  currentCash = pozostalo;
+  remainingDisplay.textContent = `Pozostało: ${currentCash.toLocaleString()} zł`;
 
   setTimeout(() => {
     alert(
