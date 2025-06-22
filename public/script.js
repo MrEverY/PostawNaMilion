@@ -1,8 +1,17 @@
 const socket = io();
-const room = new URLSearchParams(window.location.search).get("room");
+const urlParams = new URLSearchParams(window.location.search);
+const room = urlParams.get("room");
+const isHost = urlParams.get("host") === "true";
 
 document.getElementById("room-title").textContent = `Pokój: ${room}`;
-socket.emit("joinRoom", room);
+socket.emit("joinRoom", { room, isHost });
+
+const questionBox = document.getElementById("question-box");
+const moneyInfo = document.getElementById("money-info");
+const buttons = document.getElementById("buttons");
+const hostPanel = document.getElementById("host-panel");
+const timerDisplay = document.getElementById("timer");
+const confirmBtn = document.getElementById("confirm");
 
 const questionElement = document.getElementById("question");
 const answerBoxes = {
@@ -18,8 +27,6 @@ const inputs = {
   D: document.getElementById("input-D"),
 };
 const remainingDisplay = document.getElementById("remaining");
-const timerDisplay = document.getElementById("timer");
-const confirmBtn = document.getElementById("confirm");
 let timerInterval;
 
 function updateRemaining() {
@@ -39,6 +46,7 @@ function autoSubmit() {
 
 function startTimer(seconds) {
   clearInterval(timerInterval);
+  timerDisplay.style.display = "block";
   let timeLeft = seconds;
   timerDisplay.textContent = `Pozostało: ${timeLeft} sek.`;
   timerInterval = setInterval(() => {
@@ -76,6 +84,21 @@ document.getElementById("confirm").addEventListener("click", () => confirmBet())
 Object.values(inputs).forEach((input) =>
   input.addEventListener("input", updateRemaining)
 );
+
+// Host: przycisk startu gry
+if (isHost) {
+  hostPanel.style.display = "block";
+  document.getElementById("startGame").addEventListener("click", () => {
+    socket.emit("startGame", room);
+    hostPanel.style.display = "none";
+  });
+}
+
+socket.on("startGame", () => {
+  questionBox.style.display = "block";
+  moneyInfo.style.display = "block";
+  buttons.style.display = "block";
+});
 
 socket.on("newQuestion", (data) => {
   questionElement.textContent = data.pytanie;
