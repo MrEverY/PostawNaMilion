@@ -147,3 +147,19 @@ socket.on("updatePlayers", ({ players }) => {
   el.innerHTML =
     "<strong>Gracze w pokoju:</strong><br>" + players.join("<br>");
 });
+
+// 🆕 Przycisk 'Dalej' dla hosta
+const nextBtn = document.createElement("button");
+nextBtn.textContent = "➡️ Dalej";
+nextBtn.style.marginTop = "20px";
+nextBtn.style.display = "none";
+nextBtn.style.fontSize = "20px";
+nextBtn.onclick = () => {
+  socket.emit("nextQuestion", room);
+  nextBtn.style.display = "none";
+};
+document.body.appendChild(nextBtn);
+
+socket.on("showNextButton", () => {
+  if (isHost) nextBtn.style.display = "block";
+});
