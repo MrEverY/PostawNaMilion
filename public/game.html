@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Postaw na Milion – Gra</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <h1 id="room-title">Gra</h1>
+    <div id="question-box">
+      <p id="question">Ładowanie pytania...</p>
+      <div id="answers">
+        <div class="answer" id="A">A: <span class="text"></span></div>
+        <div class="answer" id="B">B: <span class="text"></span></div>
+        <div class="answer" id="C">C: <span class="text"></span></div>
+        <div class="answer" id="D">D: <span class="text"></span></div>
+      </div>
+    </div>
+
+    <div id="money-info">
+      <p>Do rozdysponowania: <strong id="remaining">1 000 000 zł</strong></p>
+    </div>
+
+    <div class="buttons">
+      <button id="confirm">Zatwierdź obstawienie</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+[
+  {
+    "pytanie": "Który kraj leży w Ameryce Południowej?",
+    "odpowiedzi": ["Hiszpania", "Brazylia", "Kanada", "Niemcy"],
+    "poprawna": "Brazylia"
+  },
+  {
+    "pytanie": "Ile nóg ma owad?",
+    "odpowiedzi": ["4", "6", "8", "10"],
+    "poprawna": "6"
+  },
+  {
+    "pytanie": "Który pierwiastek ma symbol H?",
+    "odpowiedzi": ["Hel", "Wodór", "Tlen", "Azot"],
+    "poprawna": "Wodór"
+  }
+]
