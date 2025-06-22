@@ -85,7 +85,6 @@ Object.values(inputs).forEach((input) =>
   input.addEventListener("input", updateRemaining)
 );
 
-// Host: przycisk startu gry
 if (isHost) {
   hostPanel.style.display = "block";
   document.getElementById("startGame").addEventListener("click", () => {
@@ -115,6 +114,9 @@ socket.on("newQuestion", (data) => {
   confirmBtn.disabled = false;
   updateRemaining();
   startTimer(30);
+
+  // zaktualizuj stan gotówki
+  remainingDisplay.textContent = `${data.cash.toLocaleString()} zł`;
 
   document.querySelectorAll(".answer").forEach((el) => {
     el.style.opacity = "1";
