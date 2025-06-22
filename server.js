@@ -6,47 +6,69 @@ const path = require("path");
 const fs = require("fs");
 
 const PORT = process.env.PORT || 3000;
-
-// Wczytanie pytań z pliku JSON
 const questions = JSON.parse(fs.readFileSync("pytania.json", "utf8"));
-
-// Serwowanie plików z folderu public
 app.use(express.static(path.join(__dirname, "public")));
 
-// Mapa pokoi i ich stanu
 const rooms = {};
 
-// Obsługa Socket.IO
 io.on("connection", (socket) => {
   socket.on("joinRoom", (room) => {
     socket.join(room);
 
-    // Inicjalizacja stanu pokoju, jeśli nie istnieje
     if (!rooms[room]) {
       rooms[room] = {
         questionIndex: 0,
+        cash: 1000000,
         bets: [],
       };
     }
 
-    const currentQuestion = questions[rooms[room].questionIndex];
-    if (currentQuestion) {
-      io.to(room).emit("newQuestion", currentQuestion);
-    }
+    const q = questions[rooms[room].questionIndex];
+    if (q) io.to(room).emit("newQuestion", q);
   });
 
   socket.on("submitBet", ({ room, bet }) => {
-    console.log(`Obstawienie od gracza w pokoju ${room}:`, bet);
+    const r = rooms[room];
+    if (!r) return;
 
-    if (!rooms[room]) return;
+    const question = questions[r.questionIndex];
+    const poprawna = question.poprawna;
 
-    rooms[room].bets.push(bet);
+    // Znajdź niepoprawne odpowiedzi
+    const zleOdpowiedzi = ["A", "B", "C", "D"].filter(
+      (lit) => question.odpowiedzi[["A", "B", "C", "D"].indexOf(lit)] !== poprawna
+    );
 
-    // W przyszłości: czekamy na drugiego gracza albo czas, potem eliminacja itd.
+    // Wybierz losową błędną odpowiedź do odrzucenia
+    const odpada = zleOdpowiedzi[Math.floor(Math.random() * zleOdpowiedzi.length)];
+
+    // Odejmij kasę z tej odpowiedzi
+    const utrata = bet[odpada] || 0;
+    r.cash -= utrata;
+    if (r.cash < 0) r.cash = 0;
+
+    // Poinformuj graczy, co odpadło i ile kasy zostało
+    io.to(room).emit("odrzuconaOdpowiedz", {
+      litera: odpada,
+      poprawna,
+      pozostalo: r.cash,
+    });
+
+    // Po 4 sekundach prześlij kolejne pytanie lub zakończ grę
+    setTimeout(() => {
+      r.questionIndex++;
+
+      if (r.questionIndex >= questions.length || r.cash <= 0) {
+        io.to(room).emit("koniecGry", { wynik: r.cash });
+        delete rooms[room]; // wyczyść dane pokoju
+      } else {
+        const nextQ = questions[r.questionIndex];
+        io.to(room).emit("newQuestion", nextQ);
+      }
+    }, 4000);
   });
 });
 
-// Uruchomienie serwera
 http.listen(PORT, () => {
   console.log(`Serwer działa na http://localhost:${PORT}`);
 });
