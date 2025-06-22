@@ -26,6 +26,11 @@
         margin: 5px;
         padding: 5px 10px;
       }
+      #lista-graczy {
+        margin-bottom: 20px;
+        font-size: 1.1em;
+        color: gold;
+      }
     </style>
   </head>
   <body>
@@ -41,44 +46,38 @@
       <div id="A" class="odpowiedz">
         <span class="text">Odpowiedź A</span><br />
         <input id="input-A" type="number" min="0" />
-        <button id="approve-A">Zatwierdź A</button>
+        <button class="approve" data-answer="A">Zatwierdź A</button>
+        <button class="check" data-answer="A" style="display:none;">Sprawdź A</button>
       </div>
 
       <div id="B" class="odpowiedz">
         <span class="text">Odpowiedź B</span><br />
         <input id="input-B" type="number" min="0" />
-        <button id="approve-B">Zatwierdź B</button>
+        <button class="approve" data-answer="B">Zatwierdź B</button>
+        <button class="check" data-answer="B" style="display:none;">Sprawdź B</button>
       </div>
 
       <div id="C" class="odpowiedz">
         <span class="text">Odpowiedź C</span><br />
         <input id="input-C" type="number" min="0" />
-        <button id="approve-C">Zatwierdź C</button>
+        <button class="approve" data-answer="C">Zatwierdź C</button>
+        <button class="check" data-answer="C" style="display:none;">Sprawdź C</button>
       </div>
 
       <div id="D" class="odpowiedz">
         <span class="text">Odpowiedź D</span><br />
         <input id="input-D" type="number" min="0" />
-        <button id="approve-D">Zatwierdź D</button>
+        <button class="approve" data-answer="D">Zatwierdź D</button>
+        <button class="check" data-answer="D" style="display:none;">Sprawdź D</button>
       </div>
 
-      <p>Pozostało: <span id="remaining">1 000 000 zł</span></p>
+      <p id="timer">Pozostało: <span id="time">--</span> sek.</p>
+      <p>Pozostało do rozdysponowania: <strong id="remaining">1 000 000 zł</strong></p>
+
+      <button id="next-question" style="display:none;">➡️ Przejdź do kolejnego pytania</button>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script>
-      const socket = io();
-      const urlParams = new URLSearchParams(window.location.search);
-      const room = urlParams.get("room");
-      const isHost = urlParams.get("host") === "true";
-
-      const startBtn = document.getElementById("start-game");
-      if (isHost) startBtn.style.display = "inline-block";
-      startBtn?.addEventListener("click", () => {
-        socket.emit("startGame", room);
-        startBtn.remove();
-      });
-    </script>
-    <script defer src="script.js"></script>
+    <script src="script.js" defer></script>
   </body>
 </html>
