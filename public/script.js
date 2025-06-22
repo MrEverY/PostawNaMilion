@@ -1,6 +1,5 @@
 const socket = io();
-const urlParams = new URLSearchParams(window.location.search);
-const room = urlParams.get('room');
+const room = new URLSearchParams(window.location.search).get("room");
 
 document.getElementById("room-title").textContent = `Pokój: ${room}`;
 socket.emit("joinRoom", room);
@@ -13,12 +12,49 @@ const answerBoxes = {
   D: document.getElementById("D").querySelector(".text"),
 };
 
-// Obsługa przycisku „Zatwierdź”
+const inputs = {
+  A: document.getElementById("input-A"),
+  B: document.getElementById("input-B"),
+  C: document.getElementById("input-C"),
+  D: document.getElementById("input-D"),
+};
+
+const remainingDisplay = document.getElementById("remaining");
+
+function updateRemaining() {
+  const total =
+    parseInt(inputs.A.value) +
+    parseInt(inputs.B.value) +
+    parseInt(inputs.C.value) +
+    parseInt(inputs.D.value);
+  const remaining = 1000000 - total;
+  remainingDisplay.textContent = `${remaining.toLocaleString()} zł`;
+}
+
+inputs.A.addEventListener("input", updateRemaining);
+inputs.B.addEventListener("input", updateRemaining);
+inputs.C.addEventListener("input", updateRemaining);
+inputs.D.addEventListener("input", updateRemaining);
+
 document.getElementById("confirm").addEventListener("click", () => {
-  alert("Wersja MVP: Zatwierdzanie jeszcze nie działa :)");
+  const bet = {
+    A: parseInt(inputs.A.value),
+    B: parseInt(inputs.B.value),
+    C: parseInt(inputs.C.value),
+    D: parseInt(inputs.D.value),
+  };
+
+  const total = bet.A + bet.B + bet.C + bet.D;
+
+  if (total !== 1000000) {
+    alert("Musisz rozdzielić dokładnie 1 000 000 zł!");
+    return;
+  }
+
+  socket.emit("submitBet", { room, bet });
+  alert("Obstawienie wysłane! (kolejny krok: eliminacja)");
 });
 
-// Gdy serwer wyśle pytanie
 socket.on("newQuestion", (data) => {
   questionElement.textContent = data.pytanie;
   answerBoxes.A.textContent = data.odpowiedzi[0];
