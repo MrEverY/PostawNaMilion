@@ -1,3 +1,4 @@
+// Plik: server.js
 const express = require("express");
 const http = require("http");
 const socketIO = require("socket.io");
@@ -28,6 +29,7 @@ io.on("connection", (socket) => {
         currentQuestion: 0,
         bets: {},
         approvals: {},
+        checkedAnswers: [],
       };
     }
 
@@ -65,16 +67,22 @@ io.on("connection", (socket) => {
 
       rooms[room].finalBet = finalBet;
       io.to(room).emit("betConfirmed", finalBet);
-      io.to(rooms[room].host).emit("showCheckButtons", {
-        correct: rooms[room].questions[rooms[room].currentQuestion].poprawna,
-      });
+      const currentQ = rooms[room].questions[rooms[room].currentQuestion];
+      const correct = currentQ.poprawna;
+      const correctIndex = currentQ.odpowiedzi.indexOf(correct);
+      const correctLetter = ["A", "B", "C", "D"][correctIndex];
+      rooms[room].checkedAnswers = [];
+      io.to(rooms[room].host).emit("showCheckButtons", { correct: correctLetter });
     }
   });
 
   socket.on("checkAnswer", ({ room, litera }) => {
+    if (rooms[room].checkedAnswers.includes(litera)) return;
+
+    rooms[room].checkedAnswers.push(litera);
+
     const q = rooms[room].questions[rooms[room].currentQuestion];
-    const litery = ["A", "B", "C", "D"];
-    const correctLetter = litery[q.odpowiedzi.indexOf(q.poprawna)];
+    const correctLetter = ["A", "B", "C", "D"][q.odpowiedzi.indexOf(q.poprawna)];
     const bet = rooms[room].finalBet[litera];
 
     if (litera !== correctLetter) {
@@ -87,12 +95,17 @@ io.on("connection", (socket) => {
       pozostalo: rooms[room].cash,
       poprawnaLitera: correctLetter,
     });
+
+    if (rooms[room].checkedAnswers.length === 4) {
+      io.to(rooms[room].host).emit("showNextButton");
+    }
   });
 
   socket.on("nextQuestion", (room) => {
     rooms[room].currentQuestion++;
     rooms[room].bets = {};
     rooms[room].approvals = {};
+    rooms[room].checkedAnswers = [];
 
     if (
       rooms[room].currentQuestion < rooms[room].questions.length &&
