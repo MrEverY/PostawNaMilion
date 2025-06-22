@@ -1,47 +1,69 @@
 <!DOCTYPE html>
 <html lang="pl">
-<head>
-  <meta charset="UTF-8" />
-  <title>Postaw na Milion – Gra</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <div class="container">
-    <h1 id="room-title">Pokój: ...</h1>
-    <p id="timer" style="display:none;">Pozostało: 30 sek.</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Postaw na Milion - Gra</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: black;
+        color: white;
+        text-align: center;
+        padding: 20px;
+      }
+      .odpowiedz {
+        margin: 10px;
+        padding: 10px;
+        border: 1px solid white;
+        border-radius: 10px;
+      }
+      input[type="number"] {
+        width: 80px;
+        margin: 5px;
+      }
+      button {
+        margin: 5px;
+        padding: 5px 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Postaw na Milion</h1>
 
-    <div id="host-panel" style="display:none; margin: 20px;">
-      <button id="startGame">🎬 Rozpocznij grę</button>
-    </div>
-    <div id="lista-graczy" style="color: white; margin-top: 20px;"></div>
-    <div id="question-box" style="display:none;">
-      <p id="question">Pytanie pojawi się tutaj</p>
-      <div id="answers">
-        <div class="answer" id="A">A: <span class="text"></span>
-          <input type="number" id="input-A" value="0" min="0" step="10000" />
-        </div>
-        <div class="answer" id="B">B: <span class="text"></span>
-          <input type="number" id="input-B" value="0" min="0" step="10000" />
-        </div>
-        <div class="answer" id="C">C: <span class="text"></span>
-          <input type="number" id="input-C" value="0" min="0" step="10000" />
-        </div>
-        <div class="answer" id="D">D: <span class="text"></span>
-          <input type="number" id="input-D" value="0" min="0" step="10000" />
-        </div>
+    <div id="lista-graczy"></div>
+
+    <div id="question-box" style="display: none">
+      <h2 id="question"></h2>
+
+      <div id="A" class="odpowiedz">
+        <span class="text">Odpowiedź A</span><br />
+        <input id="input-A" type="number" min="0" />
+        <button id="approve-A">Zatwierdź A</button>
       </div>
+
+      <div id="B" class="odpowiedz">
+        <span class="text">Odpowiedź B</span><br />
+        <input id="input-B" type="number" min="0" />
+        <button id="approve-B">Zatwierdź B</button>
+      </div>
+
+      <div id="C" class="odpowiedz">
+        <span class="text">Odpowiedź C</span><br />
+        <input id="input-C" type="number" min="0" />
+        <button id="approve-C">Zatwierdź C</button>
+      </div>
+
+      <div id="D" class="odpowiedz">
+        <span class="text">Odpowiedź D</span><br />
+        <input id="input-D" type="number" min="0" />
+        <button id="approve-D">Zatwierdź D</button>
+      </div>
+
+      <p>Pozostało: <span id="remaining">1 000 000 zł</span></p>
     </div>
 
-    <div id="money-info" style="display:none;">
-      <p>Pozostało do rozdysponowania: <strong id="remaining">1 000 000 zł</strong></p>
-    </div>
-
-    <div class="buttons" style="display:none;" id="buttons">
-      <button id="confirm">Zatwierdź obstawienie</button>
-    </div>
-  </div>
-
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="script.js"></script>
-</body>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+  </body>
 </html>
