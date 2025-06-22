@@ -3,163 +3,117 @@ const urlParams = new URLSearchParams(window.location.search);
 const room = urlParams.get("room");
 const isHost = urlParams.get("host") === "true";
 
-document.getElementById("room-title").textContent = `Pokój: ${room}`;
 socket.emit("joinRoom", { room, isHost });
 
-const questionBox = document.getElementById("question-box");
-const moneyInfo = document.getElementById("money-info");
-const buttons = document.getElementById("buttons");
-const hostPanel = document.getElementById("host-panel");
-const timerDisplay = document.getElementById("timer");
-const confirmBtn = document.getElementById("confirm");
+let isApproved = {};
+let betValues = { A: 0, B: 0, C: 0, D: 0 };
+let currentCash = 1000000;
+let correctAnswer = "";
 
-const questionElement = document.getElementById("question");
-const answerBoxes = {
-  A: document.getElementById("A").querySelector(".text"),
-  B: document.getElementById("B").querySelector(".text"),
-  C: document.getElementById("C").querySelector(".text"),
-  D: document.getElementById("D").querySelector(".text"),
-};
+const confirmBtn = document.getElementById("confirm");
 const inputs = {
   A: document.getElementById("input-A"),
   B: document.getElementById("input-B"),
   C: document.getElementById("input-C"),
   D: document.getElementById("input-D"),
 };
-const remainingDisplay = document.getElementById("remaining");
 
-let timerInterval;
-let currentCash = 1000000;
+const approveBtns = {
+  A: document.getElementById("approve-A"),
+  B: document.getElementById("approve-B"),
+  C: document.getElementById("approve-C"),
+  D: document.getElementById("approve-D"),
+};
 
-function updateRemaining() {
-  const total =
-    parseInt(inputs.A.value) +
-    parseInt(inputs.B.value) +
-    parseInt(inputs.C.value) +
-    parseInt(inputs.D.value);
-  const remaining = currentCash - total;
-  remainingDisplay.textContent = `${remaining.toLocaleString()} zł`;
-}
+for (let key of ["A", "B", "C", "D"]) {
+  inputs[key].addEventListener("input", () => {
+    betValues[key] = parseInt(inputs[key].value) || 0;
+    socket.emit("updateBet", { room, bet: betValues });
+    approveBtns[key].style.display = "inline-block";
+  });
 
-function autoSubmit() {
-  alert("Czas minął! Wysyłamy obstawienie.");
-  confirmBet(true);
-}
-
-function startTimer(seconds) {
-  clearInterval(timerInterval);
-  timerDisplay.style.display = "block";
-  let timeLeft = seconds;
-  timerDisplay.textContent = `Pozostało: ${timeLeft} sek.`;
-  timerInterval = setInterval(() => {
-    timeLeft--;
-    timerDisplay.textContent = `Pozostało: ${timeLeft} sek.`;
-    if (timeLeft <= 0) {
-      clearInterval(timerInterval);
-      autoSubmit();
+  approveBtns[key].addEventListener("click", () => {
+    isApproved[key] = true;
+    approveBtns[key].disabled = true;
+    if (Object.values(isApproved).every((v) => v)) {
+      socket.emit("approveBet", { room });
     }
-  }, 1000);
-}
-
-function confirmBet(force = false) {
-  const bet = {
-    A: parseInt(inputs.A.value),
-    B: parseInt(inputs.B.value),
-    C: parseInt(inputs.C.value),
-    D: parseInt(inputs.D.value),
-  };
-  const total = bet.A + bet.B + bet.C + bet.D;
-
-  if (!force && total !== currentCash) {
-    alert(`Musisz rozdzielić dokładnie ${currentCash.toLocaleString()} zł!`);
-    return;
-  }
-
-  clearInterval(timerInterval);
-  socket.emit("submitBet", { room, bet });
-  confirmBtn.disabled = true;
-  Object.values(inputs).forEach((i) => (i.disabled = true));
-}
-
-document.getElementById("confirm").addEventListener("click", () => confirmBet());
-
-Object.values(inputs).forEach((input) =>
-  input.addEventListener("input", updateRemaining)
-);
-
-if (isHost) {
-  hostPanel.style.display = "block";
-  document.getElementById("startGame").addEventListener("click", () => {
-    socket.emit("startGame", room);
-    hostPanel.style.display = "none";
   });
 }
 
+confirmBtn.addEventListener("click", () => {
+  if (
+    Object.values(betValues).reduce((a, b) => a + b, 0) !== currentCash
+  ) {
+    alert("Rozdziel dokładnie całą kwotę!");
+    return;
+  }
+});
+
 socket.on("startGame", () => {
-  questionBox.style.display = "block";
-  moneyInfo.style.display = "block";
-  buttons.style.display = "block";
+  document.getElementById("question-box").style.display = "block";
 });
 
 socket.on("newQuestion", (data) => {
-  questionElement.textContent = data.pytanie;
-  answerBoxes.A.textContent = data.odpowiedzi[0];
-  answerBoxes.B.textContent = data.odpowiedzi[1];
-  answerBoxes.C.textContent = data.odpowiedzi[2];
-  answerBoxes.D.textContent = data.odpowiedzi[3];
-
+  document.getElementById("question").textContent = data.pytanie;
+  ["A", "B", "C", "D"].forEach((l, i) => {
+    document.getElementById(l).querySelector(".text").textContent =
+      data.odpowiedzi[i];
+    inputs[l].value = 0;
+    inputs[l].disabled = false;
+    approveBtns[l].style.display = "none";
+    approveBtns[l].disabled = false;
+    isApproved[l] = false;
+  });
   currentCash = data.cash;
+});
 
-  Object.values(inputs).forEach((i) => {
-    i.value = 0;
-    i.disabled = false;
-  });
-
-  confirmBtn.disabled = false;
-  updateRemaining();
-  startTimer(30);
-
-  document.querySelectorAll(".answer").forEach((el) => {
-    el.style.opacity = "1";
+socket.on("betConfirmed", (finalBet) => {
+  ["A", "B", "C", "D"].forEach((l) => {
+    inputs[l].value = finalBet[l];
+    inputs[l].disabled = true;
   });
 });
 
-socket.on("odrzuconaOdpowiedz", ({ litera, poprawna, pozostalo }) => {
-  document.getElementById(litera).style.opacity = "0.3";
-  currentCash = pozostalo;
-  remainingDisplay.textContent = `Pozostało: ${currentCash.toLocaleString()} zł`;
-
-  setTimeout(() => {
-    alert(
-      `Odpowiedź ${litera} została odrzucona.\nPoprawna odpowiedź: ${poprawna}`
-    );
-  }, 500);
+socket.on("showCheckButtons", ({ correct }) => {
+  correctAnswer = correct;
+  if (isHost) {
+    ["A", "B", "C", "D"].forEach((l) => {
+      const btn = document.createElement("button");
+      btn.textContent = `Sprawdź ${l}`;
+      btn.onclick = () => {
+        socket.emit("checkAnswer", { room, litera: l });
+        btn.disabled = true;
+      };
+      document.getElementById(l).appendChild(btn);
+    });
+  }
 });
 
-socket.on("koniecGry", ({ wynik }) => {
-  alert(`Koniec gry! Twój wynik: ${wynik.toLocaleString()} zł`);
-  window.location.href = "/";
+socket.on("answerChecked", ({ litera, poprawna, pozostalo }) => {
+  document.getElementById(litera).style.opacity = "0.5";
+  document.getElementById("remaining").textContent = `${pozostalo.toLocaleString()} zł`;
 });
 
-// 🆕 Lista graczy
+socket.on("showNextButton", () => {
+  if (isHost) {
+    const next = document.createElement("button");
+    next.textContent = "➡️ Dalej";
+    next.onclick = () => {
+      socket.emit("nextQuestion", room);
+      next.remove();
+    };
+    document.body.appendChild(next);
+  }
+});
+
 socket.on("updatePlayers", ({ players }) => {
   const el = document.getElementById("lista-graczy");
   el.innerHTML =
     "<strong>Gracze w pokoju:</strong><br>" + players.join("<br>");
 });
 
-// 🆕 Przycisk 'Dalej' dla hosta
-const nextBtn = document.createElement("button");
-nextBtn.textContent = "➡️ Dalej";
-nextBtn.style.marginTop = "20px";
-nextBtn.style.display = "none";
-nextBtn.style.fontSize = "20px";
-nextBtn.onclick = () => {
-  socket.emit("nextQuestion", room);
-  nextBtn.style.display = "none";
-};
-document.body.appendChild(nextBtn);
-
-socket.on("showNextButton", () => {
-  if (isHost) nextBtn.style.display = "block";
+socket.on("koniecGry", ({ wynik }) => {
+  alert(`Koniec gry! Twój wynik: ${wynik.toLocaleString()} zł`);
+  window.location.href = "/";
 });
