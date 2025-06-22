@@ -29,7 +29,7 @@ const inputs = {
 const remainingDisplay = document.getElementById("remaining");
 
 let timerInterval;
-let currentCash = 1000000; // 💰 bieżąca pula pieniędzy
+let currentCash = 1000000;
 
 function updateRemaining() {
   const total =
@@ -108,7 +108,7 @@ socket.on("newQuestion", (data) => {
   answerBoxes.C.textContent = data.odpowiedzi[2];
   answerBoxes.D.textContent = data.odpowiedzi[3];
 
-  currentCash = data.cash; // 💰 aktualizacja puli z serwera
+  currentCash = data.cash;
 
   Object.values(inputs).forEach((i) => {
     i.value = 0;
@@ -139,4 +139,11 @@ socket.on("odrzuconaOdpowiedz", ({ litera, poprawna, pozostalo }) => {
 socket.on("koniecGry", ({ wynik }) => {
   alert(`Koniec gry! Twój wynik: ${wynik.toLocaleString()} zł`);
   window.location.href = "/";
+});
+
+// 🆕 Lista graczy
+socket.on("updatePlayers", ({ players }) => {
+  const el = document.getElementById("lista-graczy");
+  el.innerHTML =
+    "<strong>Gracze w pokoju:</strong><br>" + players.join("<br>");
 });
