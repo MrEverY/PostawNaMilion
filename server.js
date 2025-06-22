@@ -35,8 +35,12 @@ io.on("connection", (socket) => {
     if (isHost) {
       rooms[room].host = socket.id;
     } else {
-      rooms[room].players.push(socket.id);
+      rooms[room].players.push({ id: socket.id });
     }
+
+    // wyślij zaktualizowaną listę graczy
+    const playerList = rooms[room].players.map((_, i) => `Gracz ${i + 1}`);
+    io.to(room).emit("updatePlayers", { players: playerList });
   });
 
   socket.on("startGame", (room) => {
@@ -65,7 +69,6 @@ io.on("connection", (socket) => {
 
     rooms[room].cash -= lostCash;
 
-    // kolejna runda lub koniec gry
     setTimeout(() => {
       rooms[room].currentQuestion++;
       if (
@@ -85,7 +88,7 @@ function sendQuestion(room) {
   io.to(room).emit("newQuestion", {
     pytanie: q.pytanie,
     odpowiedzi: q.odpowiedzi,
-    cash: rooms[room].cash, // ✅ aktualna pula pieniędzy
+    cash: rooms[room].cash,
   });
 }
 
