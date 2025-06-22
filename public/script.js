@@ -20,6 +20,8 @@ const inputs = {
 };
 
 const remainingDisplay = document.getElementById("remaining");
+const timerDisplay = document.getElementById("timer");
+let timerInterval;
 
 function updateRemaining() {
   const total =
@@ -31,12 +33,26 @@ function updateRemaining() {
   remainingDisplay.textContent = `${remaining.toLocaleString()} zł`;
 }
 
-inputs.A.addEventListener("input", updateRemaining);
-inputs.B.addEventListener("input", updateRemaining);
-inputs.C.addEventListener("input", updateRemaining);
-inputs.D.addEventListener("input", updateRemaining);
+function autoSubmit() {
+  alert("Czas minął! Wysyłamy obstawienie.");
+  confirmBet(true);
+}
 
-document.getElementById("confirm").addEventListener("click", () => {
+function startTimer(seconds) {
+  clearInterval(timerInterval);
+  let timeLeft = seconds;
+  timerDisplay.textContent = `Pozostało: ${timeLeft} sek.`;
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    timerDisplay.textContent = `Pozostało: ${timeLeft} sek.`;
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      autoSubmit();
+    }
+  }, 1000);
+}
+
+function confirmBet(force = false) {
   const bet = {
     A: parseInt(inputs.A.value),
     B: parseInt(inputs.B.value),
@@ -46,14 +62,24 @@ document.getElementById("confirm").addEventListener("click", () => {
 
   const total = bet.A + bet.B + bet.C + bet.D;
 
-  if (total !== 1000000) {
+  if (!force && total !== 1000000) {
     alert("Musisz rozdzielić dokładnie 1 000 000 zł!");
     return;
   }
 
   socket.emit("submitBet", { room, bet });
   alert("Obstawienie wysłane! (kolejny krok: eliminacja)");
+}
+
+document.getElementById("confirm").addEventListener("click", () => {
+  clearInterval(timerInterval);
+  confirmBet();
 });
+
+inputs.A.addEventListener("input", updateRemaining);
+inputs.B.addEventListener("input", updateRemaining);
+inputs.C.addEventListener("input", updateRemaining);
+inputs.D.addEventListener("input", updateRemaining);
 
 socket.on("newQuestion", (data) => {
   questionElement.textContent = data.pytanie;
@@ -61,4 +87,6 @@ socket.on("newQuestion", (data) => {
   answerBoxes.B.textContent = data.odpowiedzi[1];
   answerBoxes.C.textContent = data.odpowiedzi[2];
   answerBoxes.D.textContent = data.odpowiedzi[3];
+  updateRemaining();
+  startTimer(30);
 });
