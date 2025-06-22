@@ -9,7 +9,7 @@ const io = socketIO(server);
 
 app.use(express.static("public"));
 
-const rooms = {}; // { roomCode: { players: [], host: socketId, cash, questions, currentQuestion } }
+const rooms = {};
 
 function loadQuestions() {
   const data = fs.readFileSync("pytania.json", "utf8");
@@ -38,7 +38,6 @@ io.on("connection", (socket) => {
       rooms[room].players.push({ id: socket.id });
     }
 
-    // wyślij zaktualizowaną listę graczy
     const playerList = rooms[room].players.map((_, i) => `Gracz ${i + 1}`);
     io.to(room).emit("updatePlayers", { players: playerList });
   });
@@ -54,7 +53,6 @@ io.on("connection", (socket) => {
     const litery = ["A", "B", "C", "D"];
     const correctLetter = litery[correctIndex];
 
-    // policz suma błędnych obstawień
     let lostCash = 0;
     for (let litera of litery) {
       if (litera !== correctLetter) {
@@ -69,17 +67,20 @@ io.on("connection", (socket) => {
 
     rooms[room].cash -= lostCash;
 
-    setTimeout(() => {
-      rooms[room].currentQuestion++;
-      if (
-        rooms[room].currentQuestion < rooms[room].questions.length &&
-        rooms[room].cash > 0
-      ) {
-        sendQuestion(room);
-      } else {
-        io.to(room).emit("koniecGry", { wynik: rooms[room].cash });
-      }
-    }, 3000);
+    // zamiast automatu — tylko host może przejść dalej
+    io.to(rooms[room].host).emit("showNextButton");
+  });
+
+  socket.on("nextQuestion", (room) => {
+    rooms[room].currentQuestion++;
+    if (
+      rooms[room].currentQuestion < rooms[room].questions.length &&
+      rooms[room].cash > 0
+    ) {
+      sendQuestion(room);
+    } else {
+      io.to(room).emit("koniecGry", { wynik: rooms[room].cash });
+    }
   });
 });
 
