@@ -11,16 +11,15 @@ const answerBoxes = {
   C: document.getElementById("C").querySelector(".text"),
   D: document.getElementById("D").querySelector(".text"),
 };
-
 const inputs = {
   A: document.getElementById("input-A"),
   B: document.getElementById("input-B"),
   C: document.getElementById("input-C"),
   D: document.getElementById("input-D"),
 };
-
 const remainingDisplay = document.getElementById("remaining");
 const timerDisplay = document.getElementById("timer");
+const confirmBtn = document.getElementById("confirm");
 let timerInterval;
 
 function updateRemaining() {
@@ -59,7 +58,6 @@ function confirmBet(force = false) {
     C: parseInt(inputs.C.value),
     D: parseInt(inputs.D.value),
   };
-
   const total = bet.A + bet.B + bet.C + bet.D;
 
   if (!force && total !== 1000000) {
@@ -67,19 +65,17 @@ function confirmBet(force = false) {
     return;
   }
 
+  clearInterval(timerInterval);
   socket.emit("submitBet", { room, bet });
-  alert("Obstawienie wysłane! (kolejny krok: eliminacja)");
+  confirmBtn.disabled = true;
+  Object.values(inputs).forEach((i) => (i.disabled = true));
 }
 
-document.getElementById("confirm").addEventListener("click", () => {
-  clearInterval(timerInterval);
-  confirmBet();
-});
+document.getElementById("confirm").addEventListener("click", () => confirmBet());
 
-inputs.A.addEventListener("input", updateRemaining);
-inputs.B.addEventListener("input", updateRemaining);
-inputs.C.addEventListener("input", updateRemaining);
-inputs.D.addEventListener("input", updateRemaining);
+Object.values(inputs).forEach((input) =>
+  input.addEventListener("input", updateRemaining)
+);
 
 socket.on("newQuestion", (data) => {
   questionElement.textContent = data.pytanie;
@@ -87,6 +83,33 @@ socket.on("newQuestion", (data) => {
   answerBoxes.B.textContent = data.odpowiedzi[1];
   answerBoxes.C.textContent = data.odpowiedzi[2];
   answerBoxes.D.textContent = data.odpowiedzi[3];
+
+  Object.values(inputs).forEach((i) => {
+    i.value = 0;
+    i.disabled = false;
+  });
+
+  confirmBtn.disabled = false;
   updateRemaining();
   startTimer(30);
+
+  document.querySelectorAll(".answer").forEach((el) => {
+    el.style.opacity = "1";
+  });
+});
+
+socket.on("odrzuconaOdpowiedz", ({ litera, poprawna, pozostalo }) => {
+  document.getElementById(litera).style.opacity = "0.3";
+  remainingDisplay.textContent = `Pozostało: ${pozostalo.toLocaleString()} zł`;
+
+  setTimeout(() => {
+    alert(
+      `Odpowiedź ${litera} została odrzucona.\nPoprawna odpowiedź: ${poprawna}`
+    );
+  }, 500);
+});
+
+socket.on("koniecGry", ({ wynik }) => {
+  alert(`Koniec gry! Twój wynik: ${wynik.toLocaleString()} zł`);
+  window.location.href = "/";
 });
